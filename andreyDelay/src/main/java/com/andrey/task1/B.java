@@ -9,6 +9,10 @@ public class B implements Runnable{
     }
 
     public void run() {
-        second.second(() -> System.out.print("second"));
+        try {
+            second.second(() -> System.out.print("second"));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

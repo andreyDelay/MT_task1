@@ -1,15 +1,15 @@
 package com.andrey.task1;
 
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Foo {
-    ReentrantLock lock;
+    ReentrantLock lock = new ReentrantLock();
+    Condition condition = lock.newCondition();
     private AtomicInteger ai = new AtomicInteger();
 
     Foo() {
-        this.lock = new ReentrantLock(false);
         ai.getAndSet(1);
     }
 
@@ -18,42 +18,39 @@ public class Foo {
             lock.lock();
             r1.run();
             ai.getAndIncrement();
+            condition.signalAll(); //не могу понять нить выполнения, почему зависает если поставить signal()
         } finally {
             lock.unlock();
         }
     }
 
-    public void second(Runnable r2) {
+    public void second(Runnable r2) throws InterruptedException {
         try {
-            while (ai.get() != 2) {
-                try {
-                    lock.tryLock(100, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            lock.lock();
+                while (ai.get() != 2) {
+                    condition.await();
                 }
-            }
+
             r2.run();
             ai.getAndIncrement();
+            condition.signal();
         } finally {
-            if (lock.isHeldByCurrentThread())
-                lock.unlock();
+            lock.unlock();
         }
     }
 
-    public void third(Runnable r3) {
+    public void third(Runnable r3) throws InterruptedException {
         try {
+            lock.lock();
             while (ai.get() != 3) {
-                try {
-                    lock.tryLock(100, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                    condition.await();
             }
+
             r3.run();
             ai.getAndIncrement();
+            condition.signal();
         } finally {
-            if (lock.isHeldByCurrentThread())
-                lock.unlock();
+            lock.unlock();
         }
     }
 }

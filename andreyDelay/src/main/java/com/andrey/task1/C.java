@@ -9,6 +9,10 @@ public class C implements Runnable {
     }
 
     public void run() {
-        third.third(() -> System.out.print("third"));
+        try {
+            third.third(() -> System.out.print("third"));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
